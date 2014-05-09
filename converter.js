@@ -5,12 +5,24 @@
  */
 'use strict';
 
-var err = {
+var ErrorsConvertation = {
     /**
      * XML can't be parsed.
      */
     INVALID_IMAGE : {
         message : "Invalid file format."
+    },
+    /**
+     * Found elemеnt or property which can not be removed unnoticed.
+     */
+    REMOVE_TAGS : {
+        message: "If image looks not as expected please convert to compound path manualy. Skipped tags and attributes: "
+    },
+    /**
+     * Merge paths without removing elements
+     */
+    MERGE_PATHS : {
+        message: "If image looks not as expected please convert to compound path manualy."
     }
 };
 
