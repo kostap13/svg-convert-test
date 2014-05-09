@@ -5,6 +5,8 @@
  */
 'use strict';
 
+var XMLDOMParser = require('xmldom').DOMParser;
+
 var ErrorsConvertation = {
     /**
      * XML can't be parsed.
@@ -26,9 +28,48 @@ var ErrorsConvertation = {
     }
 };
 
-function convert(string, callback) {
-    console.log("Convert data:\n" + string);
-    callback(string, null);
+function convert(data, callback) {
+
+    /**
+     * Removing tags which can't be converted.
+     * @param xmlDoc
+     */
+    var removeTags = function (xmlDoc) {
+        return {
+            doc: xmlDoc,
+            removedCount: 1, // Count of total removed tags
+            removeSafelyCount: 1, // Count of removed tags which doesn't matters on rendering
+            removed: ["circle"] // Removed tags
+        }
+    };
+
+    /**
+     * Merge paths and transforms
+     * @param doc
+     */
+    var mergePaths = function (doc) {
+        return {
+            doc: xmlDoc,
+            merges: 1 // Count of merges
+        }
+    };
+
+    console.log("Convert data:\n" + data);
+    //FIXME: Catch parse errors
+    var xmlDoc = (new XMLDOMParser()).parseFromString(data, 'application/xml');
+    var error = null;
+
+    var result = removeTags( xmlDoc );
+    if ( result.removeSafelyCount < result.removedCount ) {
+        error = ErrorsConvertation.REMOVE_TAGS; //TODO: Implement adding tag names
+    }
+
+    result = mergePaths( result.doc );
+    if (error == null && result.merges > 0) {
+        error = ErrorsConvertation.MERGE_PATHS;
+    }
+
+    callback(result.doc, error);
 };
 
 function importSvg(string, callback) {
@@ -39,3 +80,5 @@ function importSvg(string, callback) {
 exports.convert = convert;
 
 exports.import = importSvg;
+
+exports.errorsConvertation = ErrorsConvertation;

@@ -25,10 +25,12 @@ function processSVGImage(data, fileName) {
      * @param err
      */
     var onConvert = function(data, err) {
-        if (!err) {
-            converter.import(data, onImport);
-        } else {
+        if ( err != null ) {
             console.log(err.message);
+        }
+
+        if (err != converter.errorsConvertation.INVALID_IMAGE) {
+            converter.import(data, onImport);
         }
     }
 
