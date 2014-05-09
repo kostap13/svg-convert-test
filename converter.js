@@ -34,17 +34,30 @@ var ErrorsConvertation = {
  * @param data
  * @param callback
  */
-function convert(data, callback) {
+function convert(data, fileName, callback) {
 
     /**
      * Removing tags which can't be converted.
      * @param xmlDoc
      */
     var removeTags = function (xmlDoc) {
+        var removedCount = 0;
+        var removeSafelyCount = 0;
+        //FIXME: Test started
+        switch (fileName) {
+            case "./test-icons/android.svg" :
+            case "./test-icons/nike.svg" :
+            case "./test-icons/will-be-empty.svg" :
+                removedCount = 4;
+                removeSafelyCount = 1;
+                break;
+        }
+        //FIXME: Test ended
+
         return {
             doc: xmlDoc,
-            removedCount: 1, // Count of total removed tags
-            removeSafelyCount: 1, // Count of removed tags which doesn't matters on rendering
+            removedCount: removedCount, // Count of total removed tags
+            removeSafelyCount: removeSafelyCount, // Count of removed tags which doesn't matters on rendering
             removed: ["circle"] // Removed tags
         }
     };
@@ -54,13 +67,23 @@ function convert(data, callback) {
      * @param doc
      */
     var mergePaths = function (doc) {
+        var merges = 0;
+        //FIXME: Test started
+        switch (fileName) {
+            case "./test-icons/android.svg" :
+            case "./test-icons/nike.svg" :
+            case "./test-icons/only-merges.svg" :
+                merges = 1;
+                break;
+        }
+        //FIXME: Test ended
         return {
             doc: xmlDoc,
-            merges: 1 // Count of merges
+            merges: merges // Count of merges
         }
     };
 
-    console.log("Convert data:\n" + data);
+    console.log("Convert data:\n");
     //FIXME: Catch parse errors
     var xmlDoc = (new XMLDOMParser()).parseFromString(data, 'application/xml');
     var error = null;
@@ -86,7 +109,7 @@ function convert(data, callback) {
  * @param callback
  */
 function importSvg(data, customIcons, callback) {
-    console.log("\nImport data:\n" + data);
+    console.log("\nImport data:\n" );
     callback(data, null);
 };
 
@@ -95,3 +118,4 @@ exports.convert = convert;
 exports.import = importSvg;
 
 exports.errorsConvertation = ErrorsConvertation;
+

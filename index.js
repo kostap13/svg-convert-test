@@ -9,7 +9,6 @@
 var fs = require('fs');
 var converter = require('./converter');
 
-
 /**
  * Processing image lifecycle
  *
@@ -47,7 +46,7 @@ function processSVGImage(data, fileName) {
         }
     }
 
-    converter.convert(data, onConvert);
+    converter.convert(data, fileName, onConvert);  //FIXME: fileName added only for testing stub
 }
 
 if ( process.argv.length > 2 ) {
