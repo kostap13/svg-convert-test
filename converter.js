@@ -28,6 +28,12 @@ var ErrorsConvertation = {
     }
 };
 
+/**
+ * Converting SVG image to fontello format
+ *
+ * @param data
+ * @param callback
+ */
 function convert(data, callback) {
 
     /**
@@ -72,9 +78,16 @@ function convert(data, callback) {
     callback(result.doc, error);
 };
 
-function importSvg(string, callback) {
-    console.log("Import data:\n" + string);
-    callback(string, null);
+/**
+ * Import svg image from svg files.
+ *
+ * @param data - Text content
+ * @param customIcons
+ * @param callback
+ */
+function importSvg(data, customIcons, callback) {
+    console.log("\nImport data:\n" + data);
+    callback(data, null);
 };
 
 exports.convert = convert;

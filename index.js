@@ -29,8 +29,9 @@ function processSVGImage(data, fileName) {
             console.log(err.message);
         }
 
+        var customIcons = 'custom_icons'; //TODO implement = N.app.fontsList.getFont('custom_icons');
         if (err != converter.errorsConvertation.INVALID_IMAGE) {
-            converter.import(data, onImport);
+            converter.import(data, customIcons, onImport);
         }
     }
 
@@ -41,9 +42,7 @@ function processSVGImage(data, fileName) {
      * @param err
      */
     var onImport = function(data, err) {
-        if (!err) {
-            // Do next steps
-        } else {
+        if (err) {
             console.log(err.message);
         }
     }
