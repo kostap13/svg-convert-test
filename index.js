@@ -16,37 +16,31 @@ var converter = require('./converter');
  * @param fileName
  */
 function processSVGImage(data, fileName) {
+    var result = converter.convert(data);
 
-    /**
-     * Event fired when convertation finish
-     *
-     * @param data
-     * @param err
-     */
-    var onConvert = function(data, err) {
-        if ( err != null ) {
-            console.log(err.message);
-        }
-
-        var customIcons = 'custom_icons'; //TODO implement = N.app.fontsList.getFont('custom_icons');
-        if (err != converter.errorsConvertation.INVALID_IMAGE) {
-            converter.import(data, customIcons, onImport);
-        }
+    //FIXME: Test started
+    switch (fileName) {
+        case "./test-icons/android.svg" :
+        case "./test-icons/nike.svg" :
+        case "./test-icons/will-be-empty.svg" :
+            result.removed = true;
+            break;
+        case "./test-icons/android.svg" :
+        case "./test-icons/nike.svg" :
+        case "./test-icons/only-merges.svg" :
+            result.merged = true;
+            break;
     }
+    //FIXME: Test ended
 
-    /**
-     * Even fired when import finish
-     *
-     * @param data
-     * @param err
-     */
-    var onImport = function(data, err) {
-        if (err) {
-            console.log(err.message);
-        }
+    if  (result.invalid ) {
+            console.log('Invalid');
+    } else if ( result.removed  ) {
+            console.log('Removed tags');
+    } else if ( result.merged ) {
+            console.log('Merged tags');
     }
-
-    converter.convert(data, fileName, onConvert);  //FIXME: fileName added only for testing stub
+    //TODO: Implement creating SVG image
 }
 
 if ( process.argv.length > 2 ) {
