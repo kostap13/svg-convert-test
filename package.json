@@ -1,0 +1,26 @@
+{
+  "name": "svg-convert-test",
+  "version": "0.0.1",
+  "description": "Converts SVG images to compound path",
+  "main": "index.js",
+  "dependencies": {
+    "xmldom": "^0.1.19"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kostap13/svg-convert-test.git"
+  },
+  "keywords": [
+    "svg"
+  ],
+  "author": "Konstantin Latypov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kostap13/svg-convert-test/issues"
+  },
+  "homepage": "https://github.com/kostap13/svg-convert-test"
+}
