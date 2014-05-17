@@ -22,5 +22,9 @@
   "bugs": {
     "url": "https://github.com/kostap13/svg-convert-test/issues"
   },
+    "dependencies" : {
+        "xmldom"   :  "*",
+        "lodash-node" : "*"
+    }
   "homepage": "https://github.com/kostap13/svg-convert-test"
 }
