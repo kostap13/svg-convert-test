@@ -17,6 +17,7 @@
             </g>
         <path d="M 750,100 L 250,900 L 1250,900 z" transform="translate(25,30)" />
         <path d="M 750,100 L 250,900 L 1250,900 z" />
+        <path d="M 550,100 L 250,900 L 1250,900 z" />
     </g>
     <path d="M 50,100 L 250,900 L 1250,900 z"  id="asd1" class="asd1" word-spacing="normal" />
 </svg>

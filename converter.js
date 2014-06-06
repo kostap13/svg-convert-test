@@ -17,12 +17,12 @@ var quietAttributes = ["id", "d", "transform"];
  *
  * @param xmlDoc
  * @param removed  Array with removed tags
- * @param root Root element
  * @param parentTransforms  Text with parent transforms
- * @returns {{doc: xml,
+ * @returns {{pathData: Array of  Object with contains path, transforms,
  *              removed: Array}}
  */
-function removeTags (xmlDoc, removed, root, parentTransforms ) {
+function removeTags (xmlDoc, removed, parentTransforms ) {
+    var pathData = new Array();
     lodash.each( xmlDoc.childNodes, function( item )  {
         if ( item.nodeType != 1 ) {
             return;
@@ -32,7 +32,8 @@ function removeTags (xmlDoc, removed, root, parentTransforms ) {
             if ( item.getAttribute("transform") ) {
                 transforms = parentTransforms + ' ' + item.getAttribute("transform");
             }
-            removeTags( item, removed, root, transforms );
+            var result = removeTags( item, removed, transforms);
+            pathData = pathData.concat( result.pathData );
         }
 
         if ( item.nodeName != 'path' ) {
@@ -41,72 +42,62 @@ function removeTags (xmlDoc, removed, root, parentTransforms ) {
             }
             item.parentNode.removeChild( item );
         } else {
-            var path = item.cloneNode( true );
-            //TODO: Change to arrays, no DOM operations
             if ( parentTransforms != '' ) {
-                var transform = path.getAttribute("transform");
+                var transform = item.getAttribute("transform");
                 if ( transform ) {
-                    path.setAttribute("transform", parentTransforms + " " + transform);
+                    pathData.push( { 'd': item.getAttribute("d"), 'transform' : parentTransforms + " " + transform});
                 } else {
-                    path.setAttribute("transform", parentTransforms);
+                    pathData.push( { 'd': item.getAttribute("d"), 'transform' : parentTransforms });
                 }
+            } else {
+                pathData.push( { 'd': item.getAttribute("d"), 'transform' : null});
             }
             lodash.each(item.attributes, function( item ) {
                 if ( lodash.indexOf( removed, item.nodeName ) == -1 && lodash.indexOf( quietAttributes, item.nodeName ) == -1 ) {
                     removed.push( item.nodeName );
                 }
             });
-            root.appendChild( path );
         }
     });
 
     return {
-        doc: xmlDoc,
+        pathData: pathData,
         removed: removed
     }
 };
 
 /**
  * Merge transforms
- * @param doc
+ *
+ * @param pathData
+ * @returns {Array} of paths
  */
-function mergeTransforms(doc) {
-    lodash.each( doc.childNodes, function( item )  {
-        if ( item.nodeType != 1 || item.nodeName != 'path' ) {
+function mergeTransforms( pathData ) {
+    var paths = new Array();
+    lodash.each( pathData, function( item )  {
+        if ( !item.transform || item.transform == '' ) {
+            paths.push( item.d );
             return;
         }
-        var transform = item.getAttribute("transform");
-        if ( !transform || transform == '' ) {
-            return;
-        }
-        var d = item.getAttribute("d");
-        var transformedPath = new SvgPath( d ).transform( transform ).toString();
-        item.removeAttribute("transform");
-        item.setAttribute("d", transformedPath);
+        var transformedPath = new SvgPath( item.d ).transform( item.transform ).toString();
+        paths.push( transformedPath );
     });
-    return doc;
-};
+    return paths;
+}
 
 /**
+ * Merge paths from array to string
  *
- * @param xmlDoc
- * @returns {{d: String result of merge d attributes,
- *              merges: number}}
+ * @param paths
+ * @returns {string}
  */
-function mergePaths( xmlDoc ) {
-    var merges = 0;
+function mergePaths( paths ) {
     var result = '';
-    lodash.each( xmlDoc.childNodes, function( item ) {
-        if ( item.nodeType != 1 || item.nodeName != 'path' ) {
-            return;
-        }
-        result += item.getAttribute("d");
+    lodash.each( paths, function( item ) {
+        result += item;
     });
-    return {
-        d: result,
-        merges: merges // Count of merges
-    }
-};
+    return result;
+}
 
 /**
  * Converting SVG image
@@ -131,17 +122,20 @@ function convert( sourceXml ) {
     var xmlDoc = (new XMLDOMParser()).parseFromString( sourceXml , 'application/xml');
     var svg = xmlDoc.getElementsByTagName("svg")[0];
 
-    var result = removeTags( svg, new Array(), svg, '' );
+    var result = removeTags( svg, new Array(), '' );
+/*    lodash.each( result.pathData, function ( item ) {
+        console.log( item.d + " - " + item.transform );
+    });*/
 
     var removedTags = result.removed;
 
-    var xml = mergeTransforms( result.doc );
+    var paths = mergeTransforms( result.pathData );
 
-    result = mergePaths( xml );
-    if ( result.merges > 0) {
+    result = mergePaths( paths );
+    if ( paths.length > 0) {
         guaranteed = false;
     }
-    console.log( result.d );
+    console.log( result );
 
     return {
         d : result.d,
