@@ -6,78 +6,122 @@
 'use strict';
 
 var XMLDOMParser = require('xmldom').DOMParser;
+var lodash = require('lodash');
+
+
+/**
+ * Removing tags which can't be converted.
+ *
+ * @param xmlDoc
+ * @param removed  Array with removed tags
+ * @param parentTransforms  Text with parent transforms
+ * @returns {{doc: xml,
+ *              removed: Array}}
+ */
+function removeTags (xmlDoc, removed, parentTransforms, root) {
+    lodash.each( xmlDoc.childNodes, function( item )  {
+        if ( item.nodeType != 1 ) {
+            return;
+        }
+        if ( item.childNodes.length > 0 ) {
+            removeTags( item, removed, null, root );
+        }
+        console.log( item.nodeName );
+        if ( item.nodeName != 'path' ) {
+            if ( !lodash.has( removed, item.nodeName ) ) {
+                removed.push( item.nodeName );
+            }
+            item.parentNode.removeChild( item );
+        } else {
+            var path = item.cloneNode( true );
+            console.log("transform = " + item.getAttribute("transform").textContent + " / " + item.attributes.getNamedItem("transform") + " / " + item );
+            root.appendChild( path );
+        }
+        console.log( "-------------------------------------" );
+    });
+    console.log( removed );
+    console.log( 'xml = ' + xmlDoc );
+    console.log( '=====================================' );
+
+    return {
+        doc: xmlDoc,
+        removed: ["circle"] // Removed tags
+    }
+};
+
+/**
+ * Merge transforms
+ * @param doc
+ */
+function mergeTransforms(doc) {
+    return doc;
+};
+
+/**
+ * Merge paths
+ * @param doc
+ */
+function mergePaths( xmlDoc ) {
+    var merges = 0;
+    return {
+        doc: xmlDoc,
+        merges: merges // Count of merges
+    }
+};
 
 /**
  * Converting SVG image
  *
- * @param data string which contains xml of svg image
- *
+ * @param xml
  * @returns {{d: string,
  *              width: number,
- *              tags : tags,
- *              invalid: boolean,
- *              nerged: boolean,
- *              removed: boolean
- *          }}
+ *              height: number,
+ *              x: number,
+ *              y: number,
+ *              removedTags: Array,
+ *              error: Error,
+ *              guaranteed: boolean}}
  */
-function convert(data) {
-
-    /**
-     * Removing tags which can't be converted.
-     * @param xmlDoc
-     */
-    var removeTags = function (xmlDoc) {
-        var removedCount = 0;
-        var removeSafelyCount = 0;
-
-        return {
-            doc: xmlDoc,
-            removedCount: removedCount, // Count of total removed tags
-            removeSafelyCount: removeSafelyCount, // Count of removed tags which doesn't matters on rendering
-            removed: ["circle"] // Removed tags
-        }
-    };
-
-    /**
-     * Merge paths and transforms
-     * @param doc
-     */
-    var mergePaths = function (doc) {
-        var merges = 0;
-        return {
-            doc: xmlDoc,
-            merges: merges // Count of merges
-        }
-    };
-
-    var invalid = false;
-    var merged = false;
-    var removed = false;
-
+function convert( sourceXml ) {
     console.log("Convert data\n");
-    //FIXME: Catch parse errors
-    var xmlDoc = (new XMLDOMParser()).parseFromString(data, 'application/xml');
+
+    var guaranteed = true;
     var error = null;
+    var d = "";
 
-    var result = removeTags( xmlDoc );
-    if ( result.removeSafelyCount < result.removedCount ) {
-        removed = true; //TODO: Implement adding tag names
-    }
-    var tags = result.removed;
+    //FIXME: Catch parse errors
+    var xmlDoc = (new XMLDOMParser()).parseFromString( sourceXml , 'application/xml');
+    var svg = xmlDoc.getElementsByTagName("svg")[0];
 
-    result = mergePaths( result.doc );
+    var result = removeTags( svg, new Array(), null, svg );
+    var removedTags = result.removed;
+
+    var xml = mergeTransforms( result.doc );
+
+    result = mergePaths( xml );
     if ( result.merges > 0) {
-        merged = true;
+        guaranteed = false;
     }
 
-    return {
+/*    return {
         'd' : 'M 30 Z',
         'width' : 30,
         'tags' : tags,
         'invalid' : invalid,
         'nerged' : merged,
         'removed' : removed
-    }
+    }*/
+
+    return {
+        d : d,
+        width : null,
+        height : null,
+        x : null,
+        y : null,
+        removedTags : removedTags,
+        error : error,
+        guaranteed : guaranteed
+    };;
 };
 
 

@@ -4,5 +4,17 @@
     <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
     <viewBox>
         <circle2 cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
+        <path d="M 35" />
     </viewBox>
+    <g transform="scale(2)">
+        <path d="M 30" transform="translate(15,20)" />
+            <g2 transform="rotate(45)">
+                <path d="M 70" transform="translate(5,10)" />
+                <path d="M 40" />
+                <path d="M 90" />
+            </g2>
+        <path d="M 80" transform="translate(25,30)" />
+        <path d="M 100" transform="translate(35,40)" />
+    </g>
+    <path d="M 50" />
 </svg>
