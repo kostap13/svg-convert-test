@@ -31,7 +31,7 @@ function removeTags (xmlDoc, removed, root, parentTransforms ) {
             }
             removeTags( item, removed, root, transforms );
         }
-        console.log( item.nodeName );
+
         if ( item.nodeName != 'path' ) {
             if ( !lodash.has( removed, item.nodeName ) ) {
                 removed.push( item.nodeName );
@@ -47,14 +47,9 @@ function removeTags (xmlDoc, removed, root, parentTransforms ) {
                     path.setAttribute("transform", parentTransforms);
                 }
             }
-            console.log("transform = " + item.getAttribute("transform").textContent + " / " + item.attributes.getNamedItem("transform") + " / " + item );
             root.appendChild( path );
         }
-        console.log( "-------------------------------------" );
     });
-    console.log( removed );
-    console.log( 'xml = ' + xmlDoc );
-    console.log( '=====================================' );
 
     return {
         doc: xmlDoc,
