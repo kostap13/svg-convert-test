@@ -6,7 +6,7 @@
 'use strict';
 
 var XMLDOMParser = require('xmldom').DOMParser;
-var lodash = require('lodash');
+var _ = require('lodash');
 var SvgPath = require('svgpath');
 
 var quietTags = ["desc", "title"];
@@ -23,7 +23,7 @@ var quietAttributes = ["id", "d", "transform"];
  */
 function removeTags (xmlDoc, removed, parentTransforms ) {
     var pathData = new Array();
-    lodash.each( xmlDoc.childNodes, function( item )  {
+    _.each( xmlDoc.childNodes, function( item )  {
         if ( item.nodeType != 1 ) {
             return;
         }
@@ -37,7 +37,7 @@ function removeTags (xmlDoc, removed, parentTransforms ) {
         }
 
         if ( item.nodeName != 'path' ) {
-            if ( lodash.indexOf( removed, item.nodeName ) == -1 && lodash.indexOf( quietTags, item.nodeName ) == -1 ) {
+            if ( _.indexOf( removed, item.nodeName ) == -1 && _.indexOf( quietTags, item.nodeName ) == -1 ) {
                 removed.push( item.nodeName );
             }
             item.parentNode.removeChild( item );
@@ -52,8 +52,8 @@ function removeTags (xmlDoc, removed, parentTransforms ) {
             } else {
                 pathData.push( { 'd': item.getAttribute("d"), 'transform' : null});
             }
-            lodash.each(item.attributes, function( item ) {
-                if ( lodash.indexOf( removed, item.nodeName ) == -1 && lodash.indexOf( quietAttributes, item.nodeName ) == -1 ) {
+            _.each(item.attributes, function( item ) {
+                if ( _.indexOf( removed, item.nodeName ) == -1 && _.indexOf( quietAttributes, item.nodeName ) == -1 ) {
                     removed.push( item.nodeName );
                 }
             });
@@ -74,7 +74,7 @@ function removeTags (xmlDoc, removed, parentTransforms ) {
  */
 function mergeTransforms( pathData ) {
     var paths = new Array();
-    lodash.each( pathData, function( item )  {
+    _.each( pathData, function( item )  {
         if ( !item.transform || item.transform == '' ) {
             paths.push( item.d );
             return;
@@ -93,12 +93,37 @@ function mergeTransforms( pathData ) {
  */
 function mergePaths( paths ) {
     var result = '';
-    lodash.each( paths, function( item ) {
+    _.each( paths, function( item ) {
         result += item;
     });
     return result;
 }
 
+/**
+ * Returns coordinates for svg
+ *
+ * @param svg
+ * @returns {{x: (string|number),
+ *              y: (string|number),
+ *              width: (string),
+ *              height: (string)}}
+ */
+function getCoordinates(svg) {
+    var viewBox = _.map(
+        (svg.getAttribute('viewBox') || '').split(' '),
+        function(val) { return val; }
+    );
+    var attr = {};
+    _.forEach(['x', 'y', 'width', 'height'], function(key) {
+        attr[key] = parseInt(svg.getAttribute(key));
+    });
+    return {
+        x : viewBox[0] || attr.x || 0,
+        y : viewBox[1] || attr.y || 0,
+        width : viewBox[2] || attr.width || '100%',
+        height : viewBox[3] || attr.height || '100%'
+    };
+}
 /**
  * Converting SVG image
  *
@@ -123,7 +148,7 @@ function convert( sourceXml ) {
     var svg = xmlDoc.getElementsByTagName("svg")[0];
 
     var result = removeTags( svg, new Array(), '' );
-/*    lodash.each( result.pathData, function ( item ) {
+/*    _.each( result.pathData, function ( item ) {
         console.log( item.d + " - " + item.transform );
     });*/
 
@@ -135,14 +160,14 @@ function convert( sourceXml ) {
     if ( paths.length > 0) {
         guaranteed = false;
     }
-    console.log( result );
+    var coords = getCoordinates( svg );
 
     return {
         d : result.d,
-        width : null,
-        height : null,
-        x : null,
-        y : null,
+        width : coords.width,
+        height : coords.height,
+        x : coords.x,
+        y : coords.y,
         removedTags : removedTags,
         error : error,
         guaranteed : guaranteed
