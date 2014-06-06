@@ -14,17 +14,22 @@ var lodash = require('lodash');
  *
  * @param xmlDoc
  * @param removed  Array with removed tags
+ * @param root Root element
  * @param parentTransforms  Text with parent transforms
  * @returns {{doc: xml,
  *              removed: Array}}
  */
-function removeTags (xmlDoc, removed, parentTransforms, root) {
+function removeTags (xmlDoc, removed, root, parentTransforms ) {
     lodash.each( xmlDoc.childNodes, function( item )  {
         if ( item.nodeType != 1 ) {
             return;
         }
         if ( item.childNodes.length > 0 ) {
-            removeTags( item, removed, null, root );
+            var transforms = parentTransforms;
+            if ( item.getAttribute("transform") ) {
+                transforms = parentTransforms + ' ' + item.getAttribute("transform");
+            }
+            removeTags( item, removed, root, transforms );
         }
         console.log( item.nodeName );
         if ( item.nodeName != 'path' ) {
@@ -34,6 +39,14 @@ function removeTags (xmlDoc, removed, parentTransforms, root) {
             item.parentNode.removeChild( item );
         } else {
             var path = item.cloneNode( true );
+            if ( parentTransforms != '' ) {
+                var transform = path.getAttribute("transform");
+                if ( transform ) {
+                    path.setAttribute("transform", parentTransforms + " " + transform);
+                } else {
+                    path.setAttribute("transform", parentTransforms);
+                }
+            }
             console.log("transform = " + item.getAttribute("transform").textContent + " / " + item.attributes.getNamedItem("transform") + " / " + item );
             root.appendChild( path );
         }
@@ -93,7 +106,7 @@ function convert( sourceXml ) {
     var xmlDoc = (new XMLDOMParser()).parseFromString( sourceXml , 'application/xml');
     var svg = xmlDoc.getElementsByTagName("svg")[0];
 
-    var result = removeTags( svg, new Array(), null, svg );
+    var result = removeTags( svg, new Array(), svg, '' );
     var removedTags = result.removed;
 
     var xml = mergeTransforms( result.doc );

@@ -14,7 +14,7 @@
                 <path d="M 90" />
             </g2>
         <path d="M 80" transform="translate(25,30)" />
-        <path d="M 100" transform="translate(35,40)" />
+        <path d="M 100" />
     </g>
     <path d="M 50" />
 </svg>
