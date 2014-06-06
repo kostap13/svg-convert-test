@@ -47,7 +47,7 @@ if ( process.argv.length > 2 ) {
     var fileName = process.argv[2];
     fs.readFile( fileName , {'encoding' : 'utf8'}, function (err, data) {
         if (err) throw err;
-        processSVGImage(data, fileName);
+        var result = processSVGImage(data, fileName);
     });
 } else {
     console.log("No file was passed. Please type: node index.js [path to svg image]");

@@ -52,6 +52,7 @@ function removeTags (xmlDoc, removed, parentTransforms ) {
             } else {
                 pathData.push( { 'd': item.getAttribute("d"), 'transform' : null});
             }
+
             _.each(item.attributes, function( item ) {
                 if ( _.indexOf( removed, item.nodeName ) == -1 && _.indexOf( quietAttributes, item.nodeName ) == -1 ) {
                     removed.push( item.nodeName );
@@ -143,8 +144,30 @@ function convert( sourceXml ) {
     var guaranteed = true;
     var error = null;
 
-    //FIXME: Catch parse errors
-    var xmlDoc = (new XMLDOMParser()).parseFromString( sourceXml , 'application/xml');
+    var xmlDoc = (new XMLDOMParser({
+        errorHandler: {
+            error: function( err ) {
+                error = err
+            },
+            fatalError:function( err ) {
+                error = err
+            }
+        }
+    })).parseFromString( sourceXml , 'application/xml');
+
+    if ( error != null ) {
+        return {
+            d : null,
+            width : null,
+            height : null,
+            x : null,
+            y : null,
+            removedTags : null,
+            error : error,
+            guaranteed : false
+        };
+    }
+
     var svg = xmlDoc.getElementsByTagName("svg")[0];
 
     var result = removeTags( svg, new Array(), '' );
@@ -171,7 +194,7 @@ function convert( sourceXml ) {
         removedTags : removedTags,
         error : error,
         guaranteed : guaranteed
-    };;
+    };
 };
 
 
