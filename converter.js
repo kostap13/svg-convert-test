@@ -7,7 +7,10 @@
 
 var XMLDOMParser = require('xmldom').DOMParser;
 var lodash = require('lodash');
+var SvgPath = require('svgpath');
 
+var quietTags = ["desc", "title"];
+var quietAttributes = ["id", "d", "transform"];
 
 /**
  * Removing tags which can't be converted.
@@ -24,7 +27,7 @@ function removeTags (xmlDoc, removed, root, parentTransforms ) {
         if ( item.nodeType != 1 ) {
             return;
         }
-        if ( item.childNodes.length > 0 ) {
+        if ( item.childNodes.length > 0 && item.nodeName == 'g' ) {
             var transforms = parentTransforms;
             if ( item.getAttribute("transform") ) {
                 transforms = parentTransforms + ' ' + item.getAttribute("transform");
@@ -33,12 +36,13 @@ function removeTags (xmlDoc, removed, root, parentTransforms ) {
         }
 
         if ( item.nodeName != 'path' ) {
-            if ( !lodash.has( removed, item.nodeName ) ) {
+            if ( lodash.indexOf( removed, item.nodeName ) == -1 && lodash.indexOf( quietTags, item.nodeName ) == -1 ) {
                 removed.push( item.nodeName );
             }
             item.parentNode.removeChild( item );
         } else {
             var path = item.cloneNode( true );
+            //TODO: Change to arrays, no DOM operations
             if ( parentTransforms != '' ) {
                 var transform = path.getAttribute("transform");
                 if ( transform ) {
@@ -47,13 +51,18 @@ function removeTags (xmlDoc, removed, root, parentTransforms ) {
                     path.setAttribute("transform", parentTransforms);
                 }
             }
+            lodash.each(item.attributes, function( item ) {
+                if ( lodash.indexOf( removed, item.nodeName ) == -1 && lodash.indexOf( quietAttributes, item.nodeName ) == -1 ) {
+                    removed.push( item.nodeName );
+                }
+            });
             root.appendChild( path );
         }
     });
 
     return {
         doc: xmlDoc,
-        removed: ["circle"] // Removed tags
+        removed: removed
     }
 };
 
@@ -62,17 +71,39 @@ function removeTags (xmlDoc, removed, root, parentTransforms ) {
  * @param doc
  */
 function mergeTransforms(doc) {
+    lodash.each( doc.childNodes, function( item )  {
+        if ( item.nodeType != 1 || item.nodeName != 'path' ) {
+            return;
+        }
+        var transform = item.getAttribute("transform");
+        if ( !transform || transform == '' ) {
+            return;
+        }
+        var d = item.getAttribute("d");
+        var transformedPath = new SvgPath( d ).transform( transform ).toString();
+        item.removeAttribute("transform");
+        item.setAttribute("d", transformedPath);
+    });
     return doc;
 };
 
 /**
- * Merge paths
- * @param doc
+ *
+ * @param xmlDoc
+ * @returns {{d: String result of merge d attributes,
+ *              merges: number}}
  */
 function mergePaths( xmlDoc ) {
     var merges = 0;
+    var result = '';
+    lodash.each( xmlDoc.childNodes, function( item ) {
+        if ( item.nodeType != 1 || item.nodeName != 'path' ) {
+            return;
+        }
+        result += item.getAttribute("d");
+    });
     return {
-        doc: xmlDoc,
+        d: result,
         merges: merges // Count of merges
     }
 };
@@ -95,13 +126,13 @@ function convert( sourceXml ) {
 
     var guaranteed = true;
     var error = null;
-    var d = "";
 
     //FIXME: Catch parse errors
     var xmlDoc = (new XMLDOMParser()).parseFromString( sourceXml , 'application/xml');
     var svg = xmlDoc.getElementsByTagName("svg")[0];
 
     var result = removeTags( svg, new Array(), svg, '' );
+
     var removedTags = result.removed;
 
     var xml = mergeTransforms( result.doc );
@@ -110,18 +141,10 @@ function convert( sourceXml ) {
     if ( result.merges > 0) {
         guaranteed = false;
     }
-
-/*    return {
-        'd' : 'M 30 Z',
-        'width' : 30,
-        'tags' : tags,
-        'invalid' : invalid,
-        'nerged' : merged,
-        'removed' : removed
-    }*/
+    console.log( result.d );
 
     return {
-        d : d,
+        d : result.d,
         width : null,
         height : null,
         x : null,
