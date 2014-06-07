@@ -17,37 +17,29 @@ var converter = require('./converter');
  */
 function processSVGImage(data, fileName) {
     var result = converter.convert(data);
+    console.log( result );
 
-    //FIXME: Test started
-    switch (fileName) {
-        case "./test-icons/android.svg" :
-        case "./test-icons/nike.svg" :
-        case "./test-icons/will-be-empty.svg" :
-            result.removed = true;
-            break;
-        case "./test-icons/android.svg" :
-        case "./test-icons/nike.svg" :
-        case "./test-icons/only-merges.svg" :
-            result.merged = true;
-            break;
-    }
-    //FIXME: Test ended
+    if ( !result.error ) {
+        var xml = '<?xml version="1.0" ?>' +
+        '<!DOCTYPE svg  PUBLIC \'-//W3C//DTD SVG 1.1//EN\'  \'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\'>' +
+        '<svg version="1.1" width="' + result.width + '" height="' + result.height + '" x="' + result.x + '" y="' + result.y + '"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+        '<path d="' + result.d + '" />' +
+        '</svg>';
 
-    if  (result.invalid ) {
-            console.log('Invalid');
-    } else if ( result.removed  ) {
-            console.log('Removed tags');
-    } else if ( result.merged ) {
-            console.log('Merged tags');
+        fs.writeFile('result.svg', xml, function (err) {
+            if (err) throw err;
+            console.log('It\'s saved!');
+        });
+    } else {
+        console.log( "Error: " + result.error );
     }
-    //TODO: Implement creating SVG image
 }
 
 if ( process.argv.length > 2 ) {
     var fileName = process.argv[2];
     fs.readFile( fileName , {'encoding' : 'utf8'}, function (err, data) {
         if (err) throw err;
-        var result = processSVGImage(data, fileName);
+        processSVGImage(data, fileName);
     });
 } else {
     console.log("No file was passed. Please type: node index.js [path to svg image]");

@@ -186,7 +186,7 @@ function convert( sourceXml ) {
     var coords = getCoordinates( svg );
 
     return {
-        d : result.d,
+        d : result,
         width : coords.width,
         height : coords.height,
         x : coords.x,
