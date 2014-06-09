@@ -9,15 +9,15 @@
         <path d="M 10,100 L 250 z" />
     </viewBox>
     <g transform="scale(2)">
-        <path d="M 750,100 L 250,900 L 1250,900 z" transform="translate(15,20)" />
+        <path d="M 1750,100 L 250,900 L 1250,900 z" transform="translate(15,20)" />
             <g transform="rotate(45)">
                 <path d="M 750,100 L 250,900 L 1250,900 z" transform="translate(5,10)" />
                 <path d="M 750,100 L 250,900 L 1250,900 z" />
                 <path d="M 750,100 L 250,900 L 1250,900 z" />
             </g>
-        <path d="M 750,100 L 250,900 L 1250,900 z" transform="translate(25,30)" />
-        <path d="M 750,100 L 250,900 L 1250,900 z" />
-        <path d="M 550,100 L 250,900 L 1250,900 z" />
+        <path d="M 2750,100 L 250,900 L 1250,900 z" transform="translate(25,30)" />
+        <path d="M 3750,100 L 250,900 L 1250,900 z" />
+        <path d="M 4750,100 L 250,900 L 1250,900 z" />
     </g>
     <path d="M 50,100 L 250,900 L 1250,900 z"  id="asd1" class="asd1" word-spacing="normal" />
 </svg>

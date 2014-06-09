@@ -41,24 +41,17 @@ function removeTags (xmlDoc, removed, parentTransforms ) {
                 removed.push( item.nodeName );
             }
             item.parentNode.removeChild( item );
-        } else {
-            if ( parentTransforms !== '' ) {
-                var transform = item.getAttribute('transform');
-                if ( transform ) {
-                    pathData.push( { 'd': item.getAttribute('d'), 'transform' : parentTransforms + ' ' + transform});
-                } else {
-                    pathData.push( { 'd': item.getAttribute('d'), 'transform' : parentTransforms });
-                }
-            } else {
-                pathData.push( { 'd': item.getAttribute('d'), 'transform' : null});
-            }
-
-            _.each(item.attributes, function( item ) {
-                if ( _.indexOf( removed, item.nodeName ) === -1 && _.indexOf( quietAttributes, item.nodeName ) === -1 ) {
-                    removed.push( item.nodeName );
-                }
-            });
+            return;
         }
+
+        var transform = ( item.getAttribute('transform') ) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
+        pathData.push({ 'd': item.getAttribute('d'), 'transform': transform});
+
+        _.each(item.attributes, function (item) {
+            if (_.indexOf(removed, item.nodeName) === -1 && _.indexOf(quietAttributes, item.nodeName) === -1) {
+                removed.push(item.nodeName);
+            }
+        });
     });
 
     return {
