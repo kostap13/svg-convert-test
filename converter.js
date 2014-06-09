@@ -13,40 +13,60 @@ var quietTags = ['desc', 'title'];
 var quietAttributes = ['id', 'd', 'transform'];
 
 /**
+ * Parse path tag
+ *
+ * @param item
+ * @param parentTransforms
+ * @returns {{d: *, transform: string, guaranteed: boolean}}
+ */
+var parsePath = function ( item, parentTransforms ) {
+    var transform = ( item.getAttribute('transform') ) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
+    return { 'd': item.getAttribute('d'),
+                'transform': transform,
+                'guaranteed' : true};
+};
+
+// Key - supported tag, value - function for parse tag. See parseTags function for example
+var supportedTags = { path : parsePath };
+
+/**
  * Removing tags which can't be converted.
  *
  * @param xmlDoc
  * @param removed  Array with removed tags
  * @param parentTransforms  Text with parent transforms
  * @returns {{pathData: Array of  Object with contains path, transforms,
- *              removed: Array}}
+ *              removed: Array, guaranteed: boolean}}
  */
 function removeTags (xmlDoc, removed, parentTransforms ) {
     var pathData = [];
+    var guaranteed = true;
     _.each( xmlDoc.childNodes, function( item )  {
         if ( item.nodeType !== 1 ) {
             return;
         }
+        // Parse nested g tags
         if ( item.childNodes.length > 0 && item.nodeName === 'g' ) {
-            var transforms = parentTransforms;
-            if ( item.getAttribute('transform') ) {
-                transforms = parentTransforms + ' ' + item.getAttribute('transform');
-            }
+            var transforms = ( item.getAttribute('transform') ) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
             var result = removeTags( item, removed, transforms);
             pathData = pathData.concat( result.pathData );
+            guaranteed = guaranteed && result.guaranteed ;
         }
 
-        if ( item.nodeName !== 'path' ) {
-            if ( _.indexOf( removed, item.nodeName ) === -1 && _.indexOf( quietTags, item.nodeName ) === -1 ) {
-                removed.push( item.nodeName );
-            }
-            item.parentNode.removeChild( item );
+        // Remove not supported tags
+        if ( !_.has( supportedTags, item.nodeName ) &&
+                _.indexOf( removed, item.nodeName ) === -1 &&
+                _.indexOf( quietTags, item.nodeName ) ) {
+            removed.push( item.nodeName );
             return;
         }
 
-        var transform = ( item.getAttribute('transform') ) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
-        pathData.push({ 'd': item.getAttribute('d'), 'transform': transform});
+        // Parse supported tag
+        var res = supportedTags[ item.nodeName ] ( item, parentTransforms );  // Calls function for supported tag
+        pathData.push( { 'd': res.d, 'transform': res.transform} );
+        guaranteed = guaranteed && res.guaranteed;
 
+        // Remove not supported attributes
         _.each(item.attributes, function (item) {
             if (_.indexOf(removed, item.nodeName) === -1 && _.indexOf(quietAttributes, item.nodeName) === -1) {
                 removed.push(item.nodeName);
@@ -56,7 +76,8 @@ function removeTags (xmlDoc, removed, parentTransforms ) {
 
     return {
         pathData: pathData,
-        removed: removed
+        removed: removed,
+        guaranteed: guaranteed
     };
 }
 
@@ -119,7 +140,7 @@ function getCoordinates(svg) {
     };
 }
 /**
- * Converting SVG image
+ *
  *
  * @param xml
  * @returns {{d: string,
@@ -136,6 +157,16 @@ function convert( sourceXml ) {
 
     var guaranteed = true;
     var error = null;
+    var ans = {
+        d : '',
+        width : 0,
+        height : 0,
+        x : 0,
+        y : 0,
+        removedTags : [],
+        error : error,
+        guaranteed : false
+    };
 
     var xmlDoc = (new XMLDOMParser({
         errorHandler: {
@@ -149,16 +180,7 @@ function convert( sourceXml ) {
     })).parseFromString( sourceXml , 'application/xml');
 
     if ( error ) {
-        return {
-            d : null,
-            width : null,
-            height : null,
-            x : null,
-            y : null,
-            removedTags : null,
-            error : error,
-            guaranteed : false
-        };
+        return ans;
     }
 
     var svg = xmlDoc.getElementsByTagName('svg')[0];
@@ -167,6 +189,7 @@ function convert( sourceXml ) {
 /*    _.each( result.pathData, function ( item ) {
         console.log( item.d + " - " + item.transform );
     });*/
+    guaranteed = result.guaranteed;
 
     var removedTags = result.removed;
 
@@ -178,16 +201,14 @@ function convert( sourceXml ) {
     }
     var coords = getCoordinates( svg );
 
-    return {
-        d : result,
-        width : coords.width,
-        height : coords.height,
-        x : coords.x,
-        y : coords.y,
-        removedTags : removedTags,
-        error : error,
-        guaranteed : guaranteed
-    };
+    ans.d  = result;
+    ans.width = coords.width;
+    ans.height = coords.height;
+    ans.x = coords.x;
+    ans.y = coords.y;
+    ans.removedTags = removedTags;
+    ans.guaranteed = guaranteed;
+    return ans;
 }
 
 
