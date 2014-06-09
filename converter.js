@@ -9,8 +9,8 @@ var XMLDOMParser = require('xmldom').DOMParser;
 var _ = require('lodash');
 var SvgPath = require('svgpath');
 
-var quietTags = ["desc", "title"];
-var quietAttributes = ["id", "d", "transform"];
+var quietTags = ['desc', 'title'];
+var quietAttributes = ['id', 'd', 'transform'];
 
 /**
  * Removing tags which can't be converted.
@@ -22,39 +22,39 @@ var quietAttributes = ["id", "d", "transform"];
  *              removed: Array}}
  */
 function removeTags (xmlDoc, removed, parentTransforms ) {
-    var pathData = new Array();
+    var pathData = [];
     _.each( xmlDoc.childNodes, function( item )  {
-        if ( item.nodeType != 1 ) {
+        if ( item.nodeType !== 1 ) {
             return;
         }
-        if ( item.childNodes.length > 0 && item.nodeName == 'g' ) {
+        if ( item.childNodes.length > 0 && item.nodeName === 'g' ) {
             var transforms = parentTransforms;
-            if ( item.getAttribute("transform") ) {
-                transforms = parentTransforms + ' ' + item.getAttribute("transform");
+            if ( item.getAttribute('transform') ) {
+                transforms = parentTransforms + ' ' + item.getAttribute('transform');
             }
             var result = removeTags( item, removed, transforms);
             pathData = pathData.concat( result.pathData );
         }
 
-        if ( item.nodeName != 'path' ) {
-            if ( _.indexOf( removed, item.nodeName ) == -1 && _.indexOf( quietTags, item.nodeName ) == -1 ) {
+        if ( item.nodeName !== 'path' ) {
+            if ( _.indexOf( removed, item.nodeName ) === -1 && _.indexOf( quietTags, item.nodeName ) === -1 ) {
                 removed.push( item.nodeName );
             }
             item.parentNode.removeChild( item );
         } else {
-            if ( parentTransforms != '' ) {
-                var transform = item.getAttribute("transform");
+            if ( parentTransforms !== '' ) {
+                var transform = item.getAttribute('transform');
                 if ( transform ) {
-                    pathData.push( { 'd': item.getAttribute("d"), 'transform' : parentTransforms + " " + transform});
+                    pathData.push( { 'd': item.getAttribute('d'), 'transform' : parentTransforms + ' ' + transform});
                 } else {
-                    pathData.push( { 'd': item.getAttribute("d"), 'transform' : parentTransforms });
+                    pathData.push( { 'd': item.getAttribute('d'), 'transform' : parentTransforms });
                 }
             } else {
-                pathData.push( { 'd': item.getAttribute("d"), 'transform' : null});
+                pathData.push( { 'd': item.getAttribute('d'), 'transform' : null});
             }
 
             _.each(item.attributes, function( item ) {
-                if ( _.indexOf( removed, item.nodeName ) == -1 && _.indexOf( quietAttributes, item.nodeName ) == -1 ) {
+                if ( _.indexOf( removed, item.nodeName ) === -1 && _.indexOf( quietAttributes, item.nodeName ) === -1 ) {
                     removed.push( item.nodeName );
                 }
             });
@@ -64,8 +64,8 @@ function removeTags (xmlDoc, removed, parentTransforms ) {
     return {
         pathData: pathData,
         removed: removed
-    }
-};
+    };
+}
 
 /**
  * Merge transforms
@@ -74,9 +74,9 @@ function removeTags (xmlDoc, removed, parentTransforms ) {
  * @returns {Array} of paths
  */
 function mergeTransforms( pathData ) {
-    var paths = new Array();
+    var paths = [];
     _.each( pathData, function( item )  {
-        if ( !item.transform || item.transform == '' ) {
+        if ( !item.transform || item.transform === '' ) {
             paths.push( item.d );
             return;
         }
@@ -139,7 +139,7 @@ function getCoordinates(svg) {
  *              guaranteed: boolean}}
  */
 function convert( sourceXml ) {
-    console.log("Convert data\n");
+    console.log('Convert data\n');
 
     var guaranteed = true;
     var error = null;
@@ -147,15 +147,15 @@ function convert( sourceXml ) {
     var xmlDoc = (new XMLDOMParser({
         errorHandler: {
             error: function( err ) {
-                error = err
+                error = err;
             },
             fatalError:function( err ) {
-                error = err
+                error = err;
             }
         }
     })).parseFromString( sourceXml , 'application/xml');
 
-    if ( error != null ) {
+    if ( error ) {
         return {
             d : null,
             width : null,
@@ -168,9 +168,9 @@ function convert( sourceXml ) {
         };
     }
 
-    var svg = xmlDoc.getElementsByTagName("svg")[0];
+    var svg = xmlDoc.getElementsByTagName('svg')[0];
 
-    var result = removeTags( svg, new Array(), '' );
+    var result = removeTags( svg, [], '' );
 /*    _.each( result.pathData, function ( item ) {
         console.log( item.d + " - " + item.transform );
     });*/
@@ -195,7 +195,7 @@ function convert( sourceXml ) {
         error : error,
         guaranteed : guaranteed
     };
-};
+}
 
 
 exports.convert = convert;
