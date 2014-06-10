@@ -10,23 +10,95 @@ var _ = require('lodash');
 var SvgPath = require('svgpath');
 
 var quietTags = ['desc', 'title'];
-var quietAttrs = ['id', 'd', 'transform'];
-var supportedTags = ['path', 'g'];
+var supportedTags = {};
+var notQuietAtts = {};
 
-/**
- * Parse path tag
- *
- * @param item
- * @param parentTransforms
- * @returns {{d: *, transform: string, guaranteed: boolean}}
- */
-function parsePath(item, parentTransforms) {
-	var transform = ( item.getAttribute('transform') ) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
-	return { 'd': item.getAttribute('d'),
-		'transform': transform,
-		'guaranteed': true};
-}
+['path', 'g'].forEach(function (key) {
+	supportedTags[key] = true;
+});
 
+['requiredFeatures',
+	'requiredExtensions',
+	'systemLanguage',
+	'xml:base',
+	'xml:lang',
+	'xml:space',
+	'onfocusin',
+	'onfocusout',
+	'onactivate',
+	'onclick',
+	'onmousedown',
+	'onmouseup',
+	'onmouseover',
+	'onmousemove',
+	'onmouseout',
+	'onload',
+	'alignment-baseline',
+	'baseline-shift',
+	'clip',
+	'clip-path',
+	'clip-rule',
+	'color',
+	'color-interpolation',
+	'color-interpolation-filters',
+	'color-profile',
+	'color-rendering',
+	'cursor',
+	'direction',
+	'display',
+	'dominant-baseline',
+	'enable-background',
+	'fill',
+	'fill-opacity',
+	'fill-rule',
+	'filter',
+	'flood-color',
+	'flood-opacity',
+	'font-family',
+	'font-size',
+	'font-size-adjust',
+	'font-stretch',
+	'font-style',
+	'font-variant',
+	'font-weight',
+	'glyph-orientation-horizontal',
+	'glyph-orientation-vertical',
+	'image-rendering',
+	'kerning',
+	'letter-spacing',
+	'lighting-color',
+	'marker-end',
+	'marker-mid',
+	'marker-start',
+	'mask',
+	'opacity',
+	'overflow',
+	'pointer-events',
+	'shape-rendering',
+	'stop-color',
+	'stop-opacity',
+	'stroke',
+	'stroke-dasharray',
+	'stroke-dashoffset',
+	'stroke-linecap',
+	'stroke-linejoin',
+	'stroke-miterlimit',
+	'stroke-opacity',
+	'stroke-width',
+	'text-anchor',
+	'text-decoration',
+	'text-rendering',
+	'unicode-bidi',
+	'visibility',
+	'word-spacing',
+	'writing-mode',
+	'class',
+	'style',
+	'externalResourcesRequired',
+	'pathLength',
+	'externalResourcesRequired'].forEach(function (key) {
+		notQuietAtts[key] = true;
+});
 
 /**
  * Removing tags which can't be converted.
@@ -35,11 +107,10 @@ function parsePath(item, parentTransforms) {
  * @param ignoredTags  Hash with ignored tags
  * @param ignoredAttrs Hash with ignored attributes
  * @param parentTransforms  Text with parent transforms
- * @returns {{paths: Array of  Object with contains path, transforms,
+ * @returns {{paths: String with contains merged path, transforms,
  *              removed: Array, guaranteed: boolean}}
  */
-function processTree(node, ignoredTags, ignoredAttrs, parentTransforms) {
-	var paths = [];
+function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, paths) {
 	var guaranteed = true;
 	_.each(node.childNodes, function (item) {
 		// Quiet ignored tags
@@ -47,12 +118,12 @@ function processTree(node, ignoredTags, ignoredAttrs, parentTransforms) {
 			return;
 		}
 
-		// Parse nested g tags
+		// Parse nested tags
 		var transforms = '';
-		if (supportedTags.indexOf(item.nodeName) > -1) {
+		if (supportedTags[item.nodeName]) {
 			transforms = ( item.getAttribute('transform') ) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
-			var result = processTree(item, ignoredTags, ignoredAttrs, transforms);
-			paths = paths.concat(result.paths);
+			var result = processTree(item, ignoredTags, ignoredAttrs, transforms, paths);
+			paths = result.paths;
 			guaranteed = guaranteed && result.guaranteed;
 		} else {
 			ignoredTags[ item.nodeName ] = true;
@@ -68,11 +139,16 @@ function processTree(node, ignoredTags, ignoredAttrs, parentTransforms) {
 				break;
 		}
 
-		paths.push(transformedPath);
+		// Merge paths
+		if ( paths !== '' && transformedPath != '' ) {
+			guaranteed = false;
+		}
+		paths = paths + transformedPath;
 
 		// Remove not supported attributes
 		_.each(item.attributes, function (item) {
-			if (quietAttrs.indexOf(item.nodeName) === -1) {
+			if (notQuietAtts[item.nodeName]) {
+				guaranteed = false;
 				ignoredAttrs[item.nodeName] = true;
 			}
 		});
@@ -153,20 +229,12 @@ function convert(sourceXml) {
 
 	var svg = xmlDoc.getElementsByTagName('svg')[0];
 
-	var result = processTree(svg, {}, {}, '');
+	var result = processTree(svg, {}, {}, '', '');
 	var guaranteed = result.guaranteed;
-
-	var mergedPath = '';
-	_.each(result.paths, function (item) {
-		mergedPath += item;
-	});
-	if (result.paths.length > 0) {
-		guaranteed = false;
-	}
 
 	var coords = getCoordinates(svg);
 
-	ans.d = mergedPath;
+	ans.d = result.paths;
 	ans.width = coords.width;
 	ans.height = coords.height;
 	ans.x = coords.x;
