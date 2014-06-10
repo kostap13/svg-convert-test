@@ -10,18 +10,14 @@ var _ = require('lodash');
 var SvgPath = require('svgpath');
 
 var quietTags = {};
-var supportedTags = {};
 var notQuietAtts = {};
 
 ['desc', 'title'].forEach(function (key) {
   quietTags[key] = true;
 });
 
-['path', 'g'].forEach(function (key) {
-  supportedTags[key] = true;
-});
-
-['requiredFeatures',
+[
+  'requiredFeatures',
   'requiredExtensions',
   'systemLanguage',
   'xml:base',
@@ -100,9 +96,10 @@ var notQuietAtts = {};
   'style',
   'externalResourcesRequired',
   'pathLength',
-  'externalResourcesRequired'].forEach(function (key) {
-    notQuietAtts[key] = true;
-});
+  'externalResourcesRequired'
+].forEach(function (key) {
+    notQuietAtts[key] = true
+  });
 
 /**
  * Removing tags which can't be converted.
@@ -111,45 +108,47 @@ var notQuietAtts = {};
  * @param ignoredTags Hash with ignored tags
  * @param ignoredAttrs Hash with ignored attributes
  * @param parentTransforms Text with parent transforms
- * @param paths
- * @returns {{paths: String with contains merged path, ignoredTags: *, ignoredAttrs: *, guaranteed: boolean}}
+ * @param path
+ * @returns {{path: String with contains merged path, ignoredTags: *, ignoredAttrs: *, guaranteed: boolean}}
  */
-function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, paths) {
+function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, path) {
   var guaranteed = true;
   _.each(node.childNodes, function (item) {
+    // If item not Node - return
+    if (item.nodeType != 1) {
+      return;
+    }
     // Quiet ignored tags
     if (quietTags[item.nodeName]) {
       return;
     }
 
-    if ( !supportedTags[item.nodeName] ) {
-      ignoredTags[item.nodeName] = true;
-      return;
-    }
-
-    // Parse nested tags
-    var transforms = '';
-    if (supportedTags[item.nodeName]) {
-      transforms = ( item.getAttribute('transform') ) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
-      var result = processTree(item, ignoredTags, ignoredAttrs, transforms, paths);
-      paths = result.paths;
-      guaranteed = guaranteed && result.guaranteed;
-    }
-
-    // Parse supported tag
-    var transformedPath = '';
+    // Get d from supported tag, else return
+    var d = '';
     switch (item.nodeName) {
       case 'path' :
-        var d = item.getAttribute( 'd' );
-        transformedPath = new SvgPath(d).transform(transforms).toString();
+        d = item.getAttribute('d');
         break;
+      case 'g' :
+        break;
+      default :
+        ignoredTags[item.nodeName] = true;
+        return;
     }
 
-    // Merge paths
-    if ( paths !== '' && transformedPath !== '' ) {
+    var transforms = ( item.getAttribute('transform') ) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
+    // Parse nested tags
+    var result = processTree(item, ignoredTags, ignoredAttrs, transforms, path);
+    path = result.path;
+    guaranteed = guaranteed && result.guaranteed;
+
+
+    var transformedPath = new SvgPath(d).transform(transforms).toString();
+    if (path !== '' && transformedPath !== '') {
       guaranteed = false;
     }
-    paths = paths + transformedPath;
+    //Merge paths
+    path = path + transformedPath;
 
     // Remove not supported attributes
     _.each(item.attributes, function (item) {
@@ -161,7 +160,7 @@ function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, paths) {
   });
 
   return {
-    paths: paths,
+    path: path,
     ignoredTags: ignoredTags,
     ignoredAttrs: ignoredAttrs,
     guaranteed: guaranteed
@@ -182,14 +181,17 @@ function getCoordinates(svg) {
   var viewBoxAttr = svg.getAttribute('viewBox');
   var viewBox = _.map(
     (viewBoxAttr || '').split(' '),
-    function(val) { return parseInt(val, 10); }
+    function (val) {
+      return parseInt(val, 10);
+    }
   );
 
   // getting base parameters
   var attr = {};
-  _.forEach(['x', 'y', 'width', 'height'], function(key) {
+  _.forEach(['x', 'y', 'width', 'height'], function (key) {
     attr[key] = parseInt(svg.getAttribute(key), 10);
   });
+
   var result = {
     x: attr.x || 0,
     y: attr.y || 0,
@@ -197,33 +199,27 @@ function getCoordinates(svg) {
     height: attr.height,
     error: null
   };
-
-	// If viewBox attr has less than 4 digits
-	if ( viewBox && viewBox.length < 4 ) {
-		viewBoxAttr = null;
-	}
-
-  // Only svg width & height attrs are set
-  if (!viewBoxAttr && result.width && result.height) {
+  // If viewBox attr has less than 4 digits it's incorrect
+  if (viewBox && viewBox.length < 4) {
+    result.error = new Error('Svg viewbox attr has less than 4 digits');
     return result;
   }
 
-  // viewBox not set and attrs not set
-  if (!viewBoxAttr && !result.width && !result.height  ) {
-    result.error = new Error('Can`t parse xml');
-    //TODO: Implements calculating bounds
-    return result;
-  }
+  if (!viewBox) {
+    // Only svg width & height attrs are set
+    if (result.width && result.height) {
+      return result;
+    }
 
-  // viewBox not set and one attr not set
-  if (!viewBoxAttr && ( !result.width || !result.height  )) {
-    result.error = new Error('Can`t parse xml');
-    //TODO: Implements calculating bounds
-    return result;
+    // viewBox not set and attrs not set
+    if ( !result.width || !result.height) {
+      result.error = new Error('There is no any width or height');
+      return result;
+    }
   }
 
   // viewBox is set and attrs not set
-  if (viewBoxAttr && !result.width && !result.height ) {
+  if (!result.width && !result.height) {
     result.x = viewBox[0];
     result.y = viewBox[1];
     result.width = viewBox[2];
@@ -232,23 +228,20 @@ function getCoordinates(svg) {
   }
 
   // viewBox and attrs are set and values on width and height are equals
-  if (viewBox[2] === result.width && viewBox[3] === result.height ) {
+  if (viewBox[2] === result.width && viewBox[3] === result.height) {
     result.x = viewBox[0];
     result.y = viewBox[1];
     return result;
   }
 
   // viewBox is set and one attr not set
-  if (viewBoxAttr && ( !result.width || !result.height) ) {
-    result.error = new Error('Can`t parse xml');
-    //TODO: Implements calculating bounds and transform for one attr
+  if (!result.width || !result.height ) {
+    result.error = new Error('width and height must be set');
     return result;
   }
 
   // viewBox and attrs are set, but have different sizes. Need to transform image
-  result.error = new Error('Can`t parse xml');
-  //TODO: Implements transforms
-
+  result.error = new Error('svg viewbox sizes are different with svg sizes');
   return result;
 }
 /**
@@ -267,7 +260,7 @@ function convert(sourceXml) {
     height: 0,
     x: 0,
     y: 0,
-    ignoredTagsTags: [],
+    ignoredTags: [],
     ignoredAttrs: [],
     error: error,
     guaranteed: false
@@ -296,7 +289,7 @@ function convert(sourceXml) {
 
   var coords = getCoordinates(svg);
 
-  ans.d = result.paths;
+  ans.d = result.path;
   ans.width = coords.width;
   ans.height = coords.height;
   ans.x = coords.x;
