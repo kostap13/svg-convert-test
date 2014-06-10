@@ -205,15 +205,15 @@ function getCoordinates(svg) {
 		return result;
 	}
 
-	// viewBox not set and one or more attrs not set
-	if (!viewBoxAttr && ( !result.width || !result.height  )) {
+	// viewBox not set and attrs not set
+	if (!viewBoxAttr && !result.width && !result.height  ) {
 		result.error = new Error('Can`t parse xml');
 		//TODO: Implements calculating bounds
 		return result;
 	}
 
-	// viewBox not set and attrs not set
-	if (!viewBoxAttr && !result.width || !result.height  ) {
+	// viewBox not set and one attr not set
+	if (!viewBoxAttr && ( !result.width || !result.height  )) {
 		result.error = new Error('Can`t parse xml');
 		//TODO: Implements calculating bounds
 		return result;
