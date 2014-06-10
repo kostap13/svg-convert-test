@@ -108,11 +108,11 @@ var notQuietAtts = {};
  * Removing tags which can't be converted.
  *
  * @param node
- * @param ignoredTags  Hash with ignored tags
+ * @param ignoredTags Hash with ignored tags
  * @param ignoredAttrs Hash with ignored attributes
- * @param parentTransforms  Text with parent transforms
- * @returns {{paths: String with contains merged path, transforms,
- *              removed: Array, guaranteed: boolean}}
+ * @param parentTransforms Text with parent transforms
+ * @param paths
+ * @returns {{paths: String with contains merged path, ignoredTags: *, ignoredAttrs: *, guaranteed: boolean}}
  */
 function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, paths) {
 	var guaranteed = true;
@@ -176,22 +176,78 @@ function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, paths) {
  *              height: (string)}}
  */
 function getCoordinates(svg) {
+	// getting viewBox values array
+	var viewBoxAttr = svg.getAttribute('viewBox');
 	var viewBox = _.map(
-		(svg.getAttribute('viewBox') || '').split(' '),
-		function (val) {
-			return val;
-		}
+		(viewBoxAttr || '').split(' '),
+		function(val) { return parseInt(val, 10); }
 	);
+	// If viewBox attr has less than 4 digits
+	if ( viewBox && viewBox.length < 4 ) {
+		viewBoxAttr = null;
+	}
+
+	// getting base parameters
 	var attr = {};
-	_.forEach(['x', 'y', 'width', 'height'], function (key) {
-		attr[key] = parseInt(svg.getAttribute(key));
+	_.forEach(['x', 'y', 'width', 'height'], function(key) {
+		attr[key] = parseInt(svg.getAttribute(key), 10);
 	});
-	return {
-		x: viewBox[0] || attr.x || 0,
-		y: viewBox[1] || attr.y || 0,
-		width: viewBox[2] || attr.width || '100%',
-		height: viewBox[3] || attr.height || '100%'
+	var result = {
+		x: attr.x || 0,
+		y: attr.y || 0,
+		width: attr.width,
+		height: attr.height,
+		error: null
 	};
+
+	// Only svg width & height attrs are set
+	if (!viewBoxAttr && result.width && result.height) {
+		return result;
+	}
+
+	// viewBox not set and one or more attrs not set
+	if (!viewBoxAttr && ( !result.width || !result.height  )) {
+		result.error = new Error('Can`t parse xml');
+		//TODO: Implements calculating bounds
+		return result;
+	}
+
+	// viewBox not set and attrs not set
+	if (!viewBoxAttr && !result.width || !result.height  ) {
+		result.error = new Error('Can`t parse xml');
+		//TODO: Implements calculating bounds
+		return result;
+	}
+
+	// viewBox is set and attrs not set
+	if (viewBoxAttr && !result.width && !result.height ) {
+		result.x = viewBox[0];
+		result.y = viewBox[1];
+		result.width = viewBox[2];
+		result.height = viewBox[3];
+		return result;
+	}
+
+	// viewBox and attrs are set and values on width and height are equals
+	if (viewBox[2] === result.width && viewBox[3] === result.height ) {
+		result.x = viewBox[0];
+		result.y = viewBox[1];
+		return result;
+	}
+
+	// viewBox is set and one attr not set
+	if (viewBoxAttr && ( !result.width || !result.height) ) {
+		result.error = new Error('Can`t parse xml');
+		//TODO: Implements calculating bounds and transform for one attr
+		return result;
+	}
+
+	// viewBox and attrs are set, but have different sizes. Need to transform image
+	result.error = new Error('Can`t parse xml');
+	//TODO: Implements transforms
+	return result;
+
+	return result;
 }
 /**
  *
