@@ -184,10 +184,6 @@ function getCoordinates(svg) {
     (viewBoxAttr || '').split(' '),
     function(val) { return parseInt(val, 10); }
   );
-  // If viewBox attr has less than 4 digits
-  if ( viewBox && viewBox.length < 4 ) {
-    viewBoxAttr = null;
-  }
 
   // getting base parameters
   var attr = {};
@@ -201,6 +197,11 @@ function getCoordinates(svg) {
     height: attr.height,
     error: null
   };
+
+	// If viewBox attr has less than 4 digits
+	if ( viewBox && viewBox.length < 4 ) {
+		viewBoxAttr = null;
+	}
 
   // Only svg width & height attrs are set
   if (!viewBoxAttr && result.width && result.height) {
