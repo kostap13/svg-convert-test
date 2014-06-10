@@ -245,7 +245,6 @@ function getCoordinates(svg) {
 	// viewBox and attrs are set, but have different sizes. Need to transform image
 	result.error = new Error('Can`t parse xml');
 	//TODO: Implements transforms
-	return result;
 
 	return result;
 }
