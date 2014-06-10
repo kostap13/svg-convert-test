@@ -123,7 +123,7 @@ function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, paths) {
     }
 
     if ( !supportedTags[item.nodeName] ) {
-      ignoredTags[ item.nodeName ] = true;
+      ignoredTags[item.nodeName] = true;
       return;
     }
 
