@@ -52,11 +52,11 @@
 
     // Environments //////////////////////////////////////////////////////////////
 
-    "browser"       : true,   // Defines globals exposed by modern browsers
+    "browser"       : false,  // Defines globals exposed by modern browsers
     "couch"         : false,  // Defines globals exposed by CouchDB
     "devel"         : false,  // Allow developments statements e.g. `console.log();`.
     "dojo"          : false,  // Defines globals exposed by the Dojo Toolkit
-    "jquery"        : true,   // Defines globals exposed by the jQuery
+    "jquery"        : false,  // Defines globals exposed by the jQuery
     "mootools"      : false,  // Defines globals exposed by the MooTools
     "node"          : true,   // Defines globals exposed when running under Node.JS
     "nonstandard"   : false,  // Defines non-standard but widely adopted globals such as escape and unescape
@@ -74,5 +74,5 @@
 
     // Custom globals ///////////////////////////////////////////////////////////
 
-    "globals"       : { "N":false, "t":false }
+    "globals"       : {  }
 }
