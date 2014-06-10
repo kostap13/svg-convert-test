@@ -9,9 +9,13 @@ var XMLDOMParser = require('xmldom').DOMParser;
 var _ = require('lodash');
 var SvgPath = require('svgpath');
 
-var quietTags = ['desc', 'title'];
+var quietTags = {};
 var supportedTags = {};
 var notQuietAtts = {};
+
+['desc', 'title'].forEach(function (key) {
+	quietTags[key] = true;
+});
 
 ['path', 'g'].forEach(function (key) {
 	supportedTags[key] = true;
@@ -114,7 +118,7 @@ function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, paths) {
 	var guaranteed = true;
 	_.each(node.childNodes, function (item) {
 		// Quiet ignored tags
-		if (quietTags.indexOf(item.nodeName) > -1) {
+		if (quietTags[item.nodeName]) {
 			return;
 		}
 
@@ -134,13 +138,13 @@ function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, paths) {
 		var transformedPath = '';
 		switch (item.nodeName) {
 			case 'path' :
-				var d = item.getAttribute( "d" );
+				var d = item.getAttribute( 'd' );
 				transformedPath = new SvgPath(d).transform(transforms).toString();
 				break;
 		}
 
 		// Merge paths
-		if ( paths !== '' && transformedPath != '' ) {
+		if ( paths !== '' && transformedPath !== '' ) {
 			guaranteed = false;
 		}
 		paths = paths + transformedPath;
