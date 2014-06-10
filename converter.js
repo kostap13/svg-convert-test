@@ -136,7 +136,7 @@ function processTree(node, ignoredTags, ignoredAttrs, parentTransforms, path) {
         return;
     }
 
-    var transforms = ( item.getAttribute('transform') ) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
+    var transforms = (item.getAttribute('transform')) ? parentTransforms + ' ' + item.getAttribute('transform') : parentTransforms;
     // Parse nested tags
     var result = processTree(item, ignoredTags, ignoredAttrs, transforms, path);
     path = result.path;
@@ -212,7 +212,7 @@ function getCoordinates(svg) {
     }
 
     // viewBox not set and attrs not set
-    if ( !result.width || !result.height) {
+    if !result.width || !result.height) {
       result.error = new Error('There is no any width or height');
       return result;
     }
@@ -235,7 +235,7 @@ function getCoordinates(svg) {
   }
 
   // viewBox is set and one attr not set
-  if (!result.width || !result.height ) {
+  if (!result.width || !result.height) {
     result.error = new Error('width and height must be set');
     return result;
   }
